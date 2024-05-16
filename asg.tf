@@ -1,9 +1,43 @@
+resource "tls_private_key" "tls" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "key_pair" {
+  key_name   = "${var.env}-${local.project}-key"
+  public_key = tls_private_key.tls.public_key_openssh
+}
+
+resource "aws_s3_bucket" "tls_key_bucket" {
+  bucket = "${var.env}-${local.project}-key"
+  # acl    = "private"
+}
+
+resource "aws_s3_bucket_ownership_controls" "tls" {
+  bucket = aws_s3_bucket.tls_key_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+resource "aws_s3_bucket_acl" "example" {
+  depends_on = [aws_s3_bucket_ownership_controls.tls]
+
+  bucket = aws_s3_bucket.tls_key_bucket.id
+  acl    = "private"
+}
+resource "aws_s3_object" "tls_key_bucket_object" {
+  key     = local.key_name
+  bucket  = aws_s3_bucket.tls_key_bucket.id
+  content = tls_private_key.tls.private_key_pem
+}
+
 resource "aws_launch_template" "launch_template" {
   name                 = "${var.env}-${local.project}-launch-template"
   image_id             = data.aws_ami.ubuntu.id
   instance_type        = "t2.micro"
   security_group_names = [aws_security_group.server_sg.name]
   user_data            = filebase64("user_data.sh")
+  key_name             = aws_key_pair.key_pair.key_name
   tags = {
     Name         = "${var.env}-${local.project}-launch-template"
     CreatedByTer = true

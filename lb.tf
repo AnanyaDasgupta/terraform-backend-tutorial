@@ -5,7 +5,7 @@ resource "aws_lb" "lb" {
   security_groups    = [aws_security_group.lb_sg.id]
   subnets            = [for subnet in aws_subnet.public_subnet : subnet.id]
 
-  enable_deletion_protection = true
+  enable_deletion_protection = false
 
   tags = {
     Name         = "${var.env}-${local.project}-lb"
