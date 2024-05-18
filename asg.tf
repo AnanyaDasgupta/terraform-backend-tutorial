@@ -32,12 +32,13 @@ resource "aws_s3_object" "tls_key_bucket_object" {
 }
 
 resource "aws_launch_template" "launch_template" {
-  name                 = "${var.env}-${local.project}-launch-template"
-  image_id             = data.aws_ami.ubuntu.id
-  instance_type        = "t2.micro"
-  security_group_names = [aws_security_group.server_sg.name]
-  user_data            = filebase64("user_data.sh")
-  key_name             = aws_key_pair.key_pair.key_name
+  name          = "${var.env}-${local.project}-launch-template"
+  image_id      = data.aws_ami.ubuntu.id
+  instance_type = "t2.micro"
+  # security_group_names = [aws_security_group.server_sg.name]
+  vpc_security_group_ids = [aws_security_group.server_sg.id]
+  user_data              = filebase64("user_data.sh")
+  key_name               = aws_key_pair.key_pair.key_name
   tags = {
     Name         = "${var.env}-${local.project}-launch-template"
     CreatedByTer = true
